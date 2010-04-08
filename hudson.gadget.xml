@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+<ModulePrefs title="Hudson Build status">
+</ModulePrefs>  
+<UserPref name="project_url" display_name="Project url" datatype="string" default_value="http://builder.exoplatform.org/hudson/job/cs-trunk-ci"/>
+<Content type="html">
+<![CDATA[
+<script>
+
+  function getBuildNumber(txt) {
+    txt = txt.substring(txt.indexOf("#") + 1);
+    return txt.substring(0, txt.indexOf(" "));    
+  }    
+  
+  function timeToPrettyString(B) {
+    if (isNaN(B)) {
+        return "an indeterminate amount of time ago"
+    }
+    time = (new Date().getTime() - B) / 1000;
+    if (time < 60) {
+        return "less than a minute ago"
+    } else {
+        if (time < 120) {
+            return "about a minute ago"
+        } else {
+            if (time < 3600) {
+                var A = Math.round(time / 60);
+                return "about " + A + " minutes ago"
+            } else {
+                if (time < 7200) {
+                    return "about an hour ago"
+                } else {
+                    if (time < 86400) {
+                        var A = Math.round(time / 3600);
+                        return "about " + A + " hours ago"
+                    } else {
+                        if (time < 172800) {
+                            return "about a day ago"
+                        } else {
+                            if (time < 2592000) {
+                                var A = Math.round(time / 86400);
+                                return "about " + A + " days ago"
+                            } else {
+                                if (time < 5184000) {
+                                    return "about a month ago"
+                                } else {
+                                    var A = Math.round(time / 2592000);
+                                    return "about " + A + " months ago"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+  
+function loadStatus() {  
+  var params = {},
+      prefs = new gadgets.Prefs();
+  params[gadgets.io.RequestParameters.CONTENT_TYPE] = gadgets.io.ContentType.FEED;
+  var url = prefs.getString("project_url") + "/rssAll";
+  gadgets.io.makeRequest(url, function(response){
+    var statusTxt = response.data.Entry[0].Title,
+        status,
+        buildNumber,
+        html = [],
+        name;
+    
+    if (statusTxt.indexOf("SUCCESS") != -1) {
+      status = '<img src="http://builder.exoplatform.org/hudson/plugin/greenballs/48x48/green.gif" alt="success" title="success" />';
+    } else {
+      status = '<img src="http://builder.exoplatform.org/hudson/static/b1286c3d/images/48x48/red.gif" alt="failed" title="failed"/>';
+    }
+    
+    buildNumber = getBuildNumber(statusTxt);
+
+    name = response.data.Title;
+    name = name.substring(0, name.indexOf(" "));    
+    
+    html.push('<div id="build-title">', name, '</div>');
+    html.push('<div id="container"><div id="build-result"><b>', status, '</b></div>');
+    html.push('<div id="infos"><div id="build-number">Build number: <b>', buildNumber, '</b></div>');
+    html.push('<div id="build-time">Last build: <b>', timeToPrettyString(response.data.Entry[0].Date), '</b></div></div>');    
+    
+    document.getElementById("main").innerHTML = html.join('');
+  }, params);
+};
+
+gadgets.util.registerOnLoadHandler(loadStatus);                         
+</script>  
+<style>
+  #build-result {
+    float:left;
+    width:48px;    
+    font-size:1.3em;    
+  }  
+  #build-title {
+    font-size:1.3em;
+  }    
+</style>  
+  
+<div id="main">
+
+</div>  
+  
+]]></Content></Module>
